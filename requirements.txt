@@ -1,7 +1,9 @@
 streamlit
-streamlit-option-menu==0.3.12
+streamlit-option-menu==0.4.0
 streamlit-lottie
-requests
-numpy
 pandas
+numpy
+# The crucial line for loading your model/scaler!
+scikit-learn==1.7.2  # **REPLACE X.Y.Z with the exact version used to save the model**
+requests
 reportlab
