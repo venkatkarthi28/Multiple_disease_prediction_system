@@ -465,16 +465,13 @@ parkinson_animation = load_lottieurl("https://lottie.host/760cb2d4-16fa-4899-a53
 working_dir = os.path.dirname(os.path.abspath(__file__))
 
 @st.cache_resource
-def load_model_with_scaler(path):
-    with open(path, 'rb') as f:
-        data = pickle.load(f)
-    return data["model"], data["scaler"]
+def load_model(path):
+    return pickle.load(open(path, 'rb'))
 
 MODEL_DIR = os.path.join(working_dir, 'saved models')
-# Load all models with scalers
-diabetes_model, diabetes_scaler = load_model_with_scaler(os.path.join(MODEL_DIR, 'diabetes_model.sav'))
-heart_model, heart_scaler = load_model_with_scaler(os.path.join(MODEL_DIR, 'heart_disease_model.sav'))
-parkinson_model, parkinson_scaler = load_model_with_scaler(os.path.join(MODEL_DIR, 'parkinson_model.sav'))
+diabetes_model = load_model(os.path.join(MODEL_DIR, 'diabetes_model.sav'))
+heart_disease_model = load_model(os.path.join(MODEL_DIR, 'heart_disease_model.sav'))
+parkinsons_model = load_model(os.path.join(MODEL_DIR, 'parkinson_model.sav'))
 
 # ------------------------------------------------
 # 🌗 Theme Customization and Mobile Optimization
@@ -853,16 +850,18 @@ elif selected == 'Diabetes Prediction':
             st.error(t('error_input'))
         else:
             try:
-               with st.spinner(t('Analyzing your data...')):
-                    input_arr = np.asarray(input_data).reshape(1, -1)
-                    input_scaled = diabetes_scaler.transform(input_arr)
-                    prob = diabetes_model.predict_proba(input_scaled)[0][1] * 100
-
-                    if prob >= 60:
-                       diagnosis = f"{t('You have a')} {prob:.1f}% {t('risk of Diabetes.')}"
-                       st.error(diagnosis)
+                with st.spinner(t('Analyzing your data...')):
+                    input_data_as_numpy_array = np.asarray(input_data)
+                    input_data_reshaped = input_data_as_numpy_array.reshape(1, -1)
+                    decision_score = diabetes_model.decision_function(input_data_reshaped)[0]
+                    probability = min((1 / (1 + np.exp(-decision_score))) * 100,89.9)  # Normalize using sigmoid
+                    print(f"Input data: {input_data}")  # Debug input
+                    print(f"Raw probability: {probability:.1f}%")  # Debug raw output
+                    if probability >= 70:
+                        diagnosis = f"{t('You have a')} {probability:.1f}% {t('risk of Diabetes.')}"
+                        st.error(diagnosis)
                     else:
-                        diagnosis = f"{t('You are healthy! Low risk of Diabetes.')} ({prob:.1f}% {t('risk')})"
+                        diagnosis = f"{t('You are healthy! Low risk of Diabetes.')} ({probability:.1f}% {t('risk')})"
                         st.success(diagnosis)
                     
                     # Generate health insights
@@ -948,26 +947,28 @@ elif selected == 'Heart Disease Prediction':
         else:
             try:
                 with st.spinner(t('Analyzing your data...')):
-                     input_arr = np.asarray(input_data).reshape(1, -1)
-                     input_scaled = heart_scaler.transform(input_arr)
-                     prob = heart_model.predict_proba(input_scaled)[0][1] * 100
-
-                     if prob >= 50:
-                         diagnosis = f"{t('You have a')} {prob:.1f}% {t('risk of Heart Disease.')}"
-                         st.error(diagnosis)
-                     else:
-                         diagnosis = f"{t('You are healthy! Low risk of Heart Disease.')} ({prob:.1f}% {t('risk')})"
-                         st.success(diagnosis)
+                    input_data_as_numpy_array = np.asarray(input_data)
+                    input_data_reshaped = input_data_as_numpy_array.reshape(1, -1)
+                    decision_score = heart_disease_model.decision_function(input_data_reshaped)[0]
+                    probability = (1 / (1 + np.exp(-decision_score))) * 100  # Normalize using sigmoid
+                    print(f"Input data: {input_data}")  # Debug input
+                    print(f"Raw probability: {probability:.1f}%")  # Debug raw output
+                    if probability >= 60:
+                        diagnosis = f"{t('You have a')} {probability:.1f}% {t('risk of Heart Disease.')}"
+                        st.error(diagnosis)
+                    else:
+                        diagnosis = f"{t('You are healthy! Low risk of Heart Disease.')} ({probability:.1f}% {t('risk')})"
+                        st.success(diagnosis)
                     
                     # Generate health insights
-                     insights = get_health_insights("Heart Disease", input_data, 1 if probability >= 60 else 0)
-                     st.subheader(t("health_insights"))
-                     for insight in insights:
+                    insights = get_health_insights("Heart Disease", input_data, 1 if probability >= 60 else 0)
+                    st.subheader(t("health_insights"))
+                    for insight in insights:
                         st.write(f"💡 {insight}")
 
                     # Generate and download PDF report
-                     pdf_buffer = generate_pdf_report("Heart Disease", input_data, diagnosis, insights)
-                     st.download_button(
+                    pdf_buffer = generate_pdf_report("Heart Disease", input_data, diagnosis, insights)
+                    st.download_button(
                         label=t("download_report"),
                         data=pdf_buffer,
                         file_name="heart_disease_report.pdf",
@@ -1072,26 +1073,28 @@ elif selected == 'Parkinsons Prediction':
         else:
             try:
                 with st.spinner(t('Analyzing your data...')):
-                     input_arr = np.asarray(input_data).reshape(1, -1)
-                     input_scaled = parkinson_scaler.transform(input_arr)
-                     prob = parkinson_model.predict_proba(input_scaled)[0][1] * 100
-
-                     if prob >= 50:
-                         diagnosis = f"{t('You have a')} {prob:.1f}% {t('risk of Parkinson\'s Disease.')}"
-                         st.error(diagnosis)
-                     else:
-                         diagnosis = f"{t('You are healthy! Low risk of Parkinson\'s.')} ({prob:.1f}% {t('risk')})"
-                         st.success(diagnosis) 
+                    input_data_as_numpy_array = np.asarray(input_data)
+                    input_data_reshaped = input_data_as_numpy_array.reshape(1, -1)
+                    decision_score = parkinsons_model.decision_function(input_data_reshaped)[0]
+                    probability = (1 / (1 + np.exp(-decision_score))) * 100  # Normalize using sigmoid
+                    print(f"Input data: {input_data}")  # Debug input
+                    print(f"Raw probability: {probability:.1f}%")  # Debug raw output
+                    if probability >= 60:
+                        diagnosis = f"{t('You have a')} {probability:.1f}% {t('risk of Parkinson’s Disease.')}"
+                        st.error(diagnosis)
+                    else:
+                        diagnosis = f"{t('You are healthy! Low risk of Parkinson’s.')} ({probability:.1f}% {t('risk')})"
+                        st.success(diagnosis)
                     
                     # Generate health insights
-                     insights = get_health_insights("Parkinsons", input_data, 1 if probability >= 60 else 0)
-                     st.subheader(t("health_insights"))
-                     for insight in insights:
+                    insights = get_health_insights("Parkinsons", input_data, 1 if probability >= 60 else 0)
+                    st.subheader(t("health_insights"))
+                    for insight in insights:
                         st.write(f"💡 {insight}")
 
                     # Generate and download PDF report
-                     pdf_buffer = generate_pdf_report("Parkinsons", input_data, diagnosis, insights)
-                     st.download_button(
+                    pdf_buffer = generate_pdf_report("Parkinsons", input_data, diagnosis, insights)
+                    st.download_button(
                         label=t("download_report"),
                         data=pdf_buffer,
                         file_name="parkinsons_report.pdf",
